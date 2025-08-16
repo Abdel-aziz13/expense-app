@@ -15,8 +15,14 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('phone')->unique();
+            $table->string('photo')->nullable();
+            $table->string('about')->nullable();
             $table->string('password');
+            $table->enum('role', ['user', 'admin'])->default('user');
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('verification_code')->nullable();
+            $table->enum('currency', ['FCFA', 'EUR', 'USD'])->default('FCFA');
             $table->rememberToken();
             $table->timestamps();
         });
