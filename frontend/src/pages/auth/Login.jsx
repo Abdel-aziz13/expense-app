@@ -1,100 +1,93 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import axios from "axios";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
+import { EyeIcon, EyeOffIcon, Loader2, LockIcon, MailIcon } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { jwtDecode } from "jwt-decode";
+import apiClient from "@/api/apiClient";
 
 function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [backendErrors, setBackendErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Si déjà connecté → redirection
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
-    if (token) {
-      if (role === "admin") {
-        navigate("/");
-      } else {
-        navigate("/");
-      }
-    }
-  }, [navigate]);
+  // Toggle mot de passe visible/masqué
+  const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 
+  // React Hook Form
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
 
-  const onSubmit = (data) => {
+  // Soumission du formulaire
+  const onSubmit = async (data) => {
     setBackendErrors({});
-    axios
-      .post(`${import.meta.env.VITE_BACKEND_URL}/auth/login`, data)
-      .then((response) => {
-        const { access_token, user, status_message } = response.data;
+    setIsLoading(true);
 
-        // Sauvegarde token + role
-        localStorage.setItem("token", access_token);
-        localStorage.setItem("role", user.role);
+    try {
+      const res = await apiClient.post("/auth/login", data); // ✅ utilisation d’apiClient
+      const token = res.data.access_token;
 
-        toast.success(status_message || "Connexion réussie !");
+      login(token); // ✅ Contexte
 
-        // Redirection selon le role
-        setTimeout(() => {
-          if (user.role === "admin") {
-            navigate("/");
-          } else {
-            navigate("/");
-          }
-        }, 1200);
-      })
-      .catch((error) => {
-        if (error.response && error.response.status === 422) {
-          setBackendErrors(error.response.data.errors);
-        } else if (error.response && error.response.status === 403) {
-          toast.error(error.response.data.message || "Identifiants invalides.");
-        } else {
-          toast.error("Erreur serveur, veuillez réessayer.");
-        }
-      });
+      const decoded = jwtDecode(token);
+      const role = decoded.role || "user";
+
+      // toast.success("Connexion réussie 🚀");
+      toast.success("Utilisateur connecté avec succès !");
+      navigate(role === "admin" ? "/admin/dashboard" : "/user/dashboard");
+    } catch (error) {
+      if (error.response?.status === 422) {
+        setBackendErrors(error.response.data.errors);
+      } else if (error.response?.status === 403) {
+        toast.error(error.response.data.message || "Identifiants invalides");
+      } else {
+        toast.error("Erreur serveur, veuillez réessayer");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-md">
-        {/* Titre */}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100">
+      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md border border-gray-100">
+        {/* Header */}
         <div className="mb-6 text-center">
-          <h2 className="text-2xl font-semibold text-green-700 mb-2">
-            Connexion
-          </h2>
-          <p className="text-sm text-gray-600">Heureux de vous revoir !</p>
+          <h2 className="text-3xl font-bold text-green-700">Connexion</h2>
+          <p className="text-gray-600 mt-1 text-sm">
+            Heureux de vous revoir 👋
+          </p>
         </div>
 
         {/* Formulaire */}
         <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
           {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium">
+            <label htmlFor="email" className="block text-sm font-medium mb-1">
               Adresse email
             </label>
-            <input
-              id="email"
-              type="email"
-              placeholder="Entrez votre adresse email"
-              {...register("email", {
-                required: "Veuillez saisir une adresse email",
-                pattern: {
-                  value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                  message: "Adresse email invalide",
-                },
-              })}
-              className={`w-full mt-1 px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 ${
-                errors.email || backendErrors.email
-                  ? "focus:ring-red-500"
-                  : "focus:ring-green-500"
-              }`}
-            />
+            <div className="relative flex items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-green-500">
+              <MailIcon className="h-5 w-5 text-gray-400 mr-2" />
+              <input
+                id="email"
+                type="email"
+                placeholder="exemple@email.com"
+                {...register("email", {
+                  required: "Veuillez saisir une adresse email",
+                  pattern: {
+                    value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                    message: "Adresse email invalide",
+                  },
+                })}
+                className="w-full text-sm border-0 focus:outline-none bg-transparent"
+              />
+            </div>
             {errors.email && (
               <p className="text-sm text-red-500 mt-1">
                 {errors.email.message}
@@ -109,27 +102,39 @@ function Login() {
 
           {/* Mot de passe */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium mb-1"
+            >
               Mot de passe
             </label>
-            <input
-              id="password"
-              type="password"
-              placeholder="Votre mot de passe"
-              {...register("password", {
-                required: "Veuillez saisir un mot de passe",
-                minLength: {
-                  value: 8,
-                  message:
-                    "Le mot de passe doit comporter au moins 8 caractères",
-                },
-              })}
-              className={`w-full mt-1 px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 ${
-                errors.password || backendErrors.password
-                  ? "focus:ring-red-500"
-                  : "focus:ring-green-500"
-              }`}
-            />
+            <div className="relative flex items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-green-500">
+              <LockIcon className="h-5 w-5 text-gray-400 mr-2" />
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Votre mot de passe"
+                {...register("password", {
+                  required: "Veuillez saisir un mot de passe",
+                  minLength: {
+                    value: 8,
+                    message: "Le mot de passe doit avoir au moins 8 caractères",
+                  },
+                })}
+                className="w-full text-sm border-0 focus:outline-none bg-transparent"
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="ml-2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? (
+                  <EyeOffIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </button>
+            </div>
             {errors.password && (
               <p className="text-sm text-red-500 mt-1">
                 {errors.password.message}
@@ -144,11 +149,12 @@ function Login() {
 
           {/* Options */}
           <div className="flex justify-between items-center text-sm">
-            <label className="flex items-center">
-              <input type="checkbox" className="mr-2" /> Se souvenir de moi
+            <label className="flex items-center gap-2">
+              <input type="checkbox" className="rounded text-green-600" /> Se
+              souvenir de moi
             </label>
             <Link
-              to="/forgot-password"
+              to="/auth/forgot-password"
               className="text-green-700 hover:underline"
             >
               Mot de passe oublié ?
@@ -158,16 +164,21 @@ function Login() {
           {/* Bouton */}
           <button
             type="submit"
-            className="w-full bg-green-700 text-white py-2 rounded-md hover:bg-green-800 transition duration-200 text-sm"
+            disabled={isLoading}
+            className="w-full bg-green-700 text-white py-2 rounded-lg hover:bg-green-800 transition duration-200 text-sm disabled:opacity-50 flex items-center justify-center"
           >
-            Se connecter
+            {isLoading && <Loader2 className="w-5 h-5 animate-spin mr-2" />}
+            {isLoading ? "Connexion..." : "Se connecter"}
           </button>
         </form>
 
         {/* Lien inscription */}
         <div className="mt-6 text-center text-sm">
-          Vous n'avez pas de compte ?{" "}
-          <Link to="/register" className="text-green-700 hover:underline">
+          Pas de compte ?{" "}
+          <Link
+            to="/auth/register"
+            className="text-green-700 font-medium hover:underline"
+          >
             S'inscrire
           </Link>
         </div>

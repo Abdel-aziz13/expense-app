@@ -13,14 +13,9 @@ class Budget extends Model
         'user_id',
         'category_id',
         'amount',
-        'currency',
-        'start_date',
-        'end_date',
-    ];
-
-    protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'period',
+        'spent',
+        'alert_threshold',
     ];
 
     // Relations

@@ -5,8 +5,11 @@ import { BiFirstPage, BiLastPage } from "react-icons/bi";
 import { GrFormPrevious, GrFormNext } from "react-icons/gr";
 
 const PaginationArea = ({ table }) => {
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageCount = table.getPageCount();
+
   return (
-    <div className="w-full border-t bg-white px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="w-full border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       {/* Sélection du nombre d'éléments par page */}
       <PaginationSelection
         pageSize={table.getState().pagination.pageSize}
@@ -15,9 +18,8 @@ const PaginationArea = ({ table }) => {
 
       {/* Navigation */}
       <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-6">
-        <span className="text-sm text-gray-500">
-          Page {table.getState().pagination.pageIndex + 1} sur{" "}
-          {table.getPageCount()}
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          Page {pageIndex + 1} sur {pageCount}
         </span>
 
         <div className="flex gap-2">
@@ -48,7 +50,7 @@ const PaginationArea = ({ table }) => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+            onClick={() => table.setPageIndex(pageCount - 1)}
             disabled={!table.getCanNextPage()}
           >
             <BiLastPage className="w-4 h-4" />

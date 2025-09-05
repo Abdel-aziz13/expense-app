@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import axios from "axios";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { MailIcon, PhoneIcon, LockIcon, UserIcon } from "lucide-react";
+import apiClient from "@/api/apiClient";
 
 function Register() {
   const {
@@ -13,60 +14,63 @@ function Register() {
   } = useForm();
 
   const [backendErrors, setBackendErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const onSubmit = (data) => {
+
+  const onSubmit = async (data) => {
     setBackendErrors({});
-    axios
-      .post(`${import.meta.env.VITE_BACKEND_URL}/auth/register`, data)
-      .then((response) => {
-        toast.success(response.data.status_message || "Inscription réussie !");
-        setTimeout(() => navigate("/login"), 1500);
-        // console.log(response.data);
-      })
-      .catch((error) => {
-        if (error.response && error.response.status === 422) {
-          const validationErrors = error.response.data.errors;
-          setBackendErrors(validationErrors);
-        } else {
-          toast.error("Erreur serveur, veuillez réessayer.");
-        }
-      });
+    setIsLoading(true);
+
+    try {
+      const res = await apiClient.post("/auth/register", data); // ✅ apiClient
+      toast.success(res.data.status_message || "Inscription réussie ✅");
+      setTimeout(() => navigate("/auth/login"), 1500);
+    } catch (error) {
+      if (error.response?.status === 422) {
+        setBackendErrors(error.response.data.errors);
+      } else {
+        toast.error("Erreur serveur, veuillez réessayer.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center font-poppins bg-gray-50">
-      <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-md">
-        <h2 className="text-2xl font-semibold text-center text-green-700 mb-2">
-          Créer un compte
-        </h2>
-        <p className="text-sm text-center text-gray-600 mb-6">
-          Suivez vos dépenses facilement avec{" "}
-          <span className="font-semibold">ExpenseTrack Cameroun</span>
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 font-poppins">
+      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md border border-gray-100">
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <h2 className="text-3xl font-bold text-green-700">Créer un compte</h2>
+          <p className="text-gray-600 mt-1 text-sm">
+            Suivez vos dépenses avec{" "}
+            <span className="font-semibold">ExpenseTrack Cameroun</span>
+          </p>
+        </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+        {/* Formulaire */}
+        <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
           {/* Nom complet */}
           <div>
-            <label htmlFor="signup-name" className="block text-sm font-medium">
+            <label htmlFor="name" className="block text-sm font-medium mb-1">
               Nom complet
             </label>
-            <input
-              id="signup-name"
-              type="text"
-              placeholder="Entrez votre nom complet"
-              {...register("name", {
-                required: "Veuillez saisir un nom",
-                minLength: {
-                  value: 5,
-                  message: "Le nom doit comporter au moins 5 caractères",
-                },
-              })}
-              className={`w-full mt-1 px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 ${
-                errors.name || backendErrors.name
-                  ? "border-red-500 focus:ring-red-500"
-                  : "focus:ring-green-500"
-              }`}
-            />
+            <div className="relative flex items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-green-500">
+              <UserIcon className="h-5 w-5 text-gray-400 mr-2" />
+              <input
+                id="name"
+                type="text"
+                placeholder="Votre nom complet"
+                {...register("name", {
+                  required: "Veuillez saisir un nom",
+                  minLength: {
+                    value: 5,
+                    message: "Le nom doit comporter au moins 5 caractères",
+                  },
+                })}
+                className="w-full text-sm border-0 focus:outline-none bg-transparent"
+              />
+            </div>
             {(errors.name && (
               <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
             )) ||
@@ -79,26 +83,25 @@ function Register() {
 
           {/* Email */}
           <div>
-            <label htmlFor="signup-email" className="block text-sm font-medium">
+            <label htmlFor="email" className="block text-sm font-medium mb-1">
               Adresse email
             </label>
-            <input
-              id="signup-email"
-              type="email"
-              placeholder="Entrez votre adresse email"
-              {...register("email", {
-                required: "Veuillez saisir une adresse email",
-                pattern: {
-                  value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                  message: "Adresse email invalide",
-                },
-              })}
-              className={`w-full mt-1 px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 ${
-                errors.email || backendErrors.email
-                  ? "border-red-500 focus:ring-red-500"
-                  : "focus:ring-green-500"
-              }`}
-            />
+            <div className="relative flex items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-green-500">
+              <MailIcon className="h-5 w-5 text-gray-400 mr-2" />
+              <input
+                id="email"
+                type="email"
+                placeholder="exemple@email.com"
+                {...register("email", {
+                  required: "Veuillez saisir une adresse email",
+                  pattern: {
+                    value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                    message: "Adresse email invalide",
+                  },
+                })}
+                className="w-full text-sm border-0 focus:outline-none bg-transparent"
+              />
+            </div>
             {(errors.email && (
               <p className="text-sm text-red-500 mt-1">
                 {errors.email.message}
@@ -113,26 +116,25 @@ function Register() {
 
           {/* Téléphone */}
           <div>
-            <label htmlFor="signup-phone" className="block text-sm font-medium">
-              Numéro de téléphone
+            <label htmlFor="phone" className="block text-sm font-medium mb-1">
+              Téléphone
             </label>
-            <input
-              id="signup-phone"
-              type="tel"
-              placeholder="Ex: 6xxxxxxxx"
-              {...register("phone", {
-                required: "Veuillez saisir un numéro de téléphone",
-                pattern: {
-                  value: /^6(2|5|6|7|8|9)\d{7}$/,
-                  message: "Numéro invalide (ex: 6xxxxxxxx)",
-                },
-              })}
-              className={`w-full mt-1 px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 ${
-                errors.phone || backendErrors.phone
-                  ? "border-red-500 focus:ring-red-500"
-                  : "focus:ring-green-500"
-              }`}
-            />
+            <div className="relative flex items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-green-500">
+              <PhoneIcon className="h-5 w-5 text-gray-400 mr-2" />
+              <input
+                id="phone"
+                type="tel"
+                placeholder="6xxxxxxxx"
+                {...register("phone", {
+                  required: "Veuillez saisir un numéro",
+                  pattern: {
+                    value: /^6(2|5|6|7|8|9)\d{7}$/,
+                    message: "Numéro invalide (ex: 6xxxxxxxx)",
+                  },
+                })}
+                className="w-full text-sm border-0 focus:outline-none bg-transparent"
+              />
+            </div>
             {(errors.phone && (
               <p className="text-sm text-red-500 mt-1">
                 {errors.phone.message}
@@ -148,29 +150,27 @@ function Register() {
           {/* Mot de passe */}
           <div>
             <label
-              htmlFor="signup-password"
-              className="block text-sm font-medium"
+              htmlFor="password"
+              className="block text-sm font-medium mb-1"
             >
               Mot de passe
             </label>
-            <input
-              id="signup-password"
-              type="password"
-              placeholder="Créez un mot de passe sécurisé"
-              {...register("password", {
-                required: "Veuillez saisir un mot de passe",
-                minLength: {
-                  value: 8,
-                  message:
-                    "Le mot de passe doit comporter au moins 8 caractères",
-                },
-              })}
-              className={`w-full mt-1 px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 ${
-                errors.password || backendErrors.password
-                  ? " focus:ring-red-500"
-                  : "focus:ring-green-500"
-              }`}
-            />
+            <div className="relative flex items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-green-500">
+              <LockIcon className="h-5 w-5 text-gray-400 mr-2" />
+              <input
+                id="password"
+                type="password"
+                placeholder="Mot de passe sécurisé"
+                {...register("password", {
+                  required: "Veuillez saisir un mot de passe",
+                  minLength: {
+                    value: 8,
+                    message: "Au moins 8 caractères requis",
+                  },
+                })}
+                className="w-full text-sm border-0 focus:outline-none bg-transparent"
+              />
+            </div>
             {(errors.password && (
               <p className="text-sm text-red-500 mt-1">
                 {errors.password.message}
@@ -186,27 +186,24 @@ function Register() {
           {/* Confirmation mot de passe */}
           <div>
             <label
-              htmlFor="signup-confirm-password"
-              className="block text-sm font-medium"
+              htmlFor="password_confirmation"
+              className="block text-sm font-medium mb-1"
             >
-              Confirmer le mot de passe
+              Confirmer mot de passe
             </label>
-            <input
-              id="signup-confirm-password"
-              type="password"
-              placeholder="Confirmez votre mot de passe"
-              {...register("password_confirmation", {
-                validate: (value) =>
-                  value === watch("password") ||
-                  "Les mots de passe ne correspondent pas",
-              })}
-              className={`w-full mt-1 px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 ${
-                errors.password_confirmation ||
-                backendErrors.password_confirmation
-                  ? "border-red-500 focus:ring-red-500"
-                  : "focus:ring-green-500"
-              }`}
-            />
+            <div className="relative flex items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-green-500">
+              <LockIcon className="h-5 w-5 text-gray-400 mr-2" />
+              <input
+                id="password_confirmation"
+                type="password"
+                placeholder="Confirmez votre mot de passe"
+                {...register("password_confirmation", {
+                  validate: (val) =>
+                    val === watch("password") || "Les mots de passe diffèrent",
+                })}
+                className="w-full text-sm border-0 focus:outline-none bg-transparent"
+              />
+            </div>
             {(errors.password_confirmation && (
               <p className="text-sm text-red-500 mt-1">
                 {errors.password_confirmation.message}
@@ -219,19 +216,15 @@ function Register() {
               ))}
           </div>
 
-          {/* Accepter les termes */}
+          {/* Termes */}
           <div>
-            <label
-              htmlFor="signup-terms"
-              className="flex items-start space-x-2 text-sm"
-            >
+            <label className="flex items-start gap-2 text-sm">
               <input
                 type="checkbox"
-                id="signup-terms"
                 {...register("terms", {
-                  required: "Vous devez accepter les termes et conditions",
+                  required: "Vous devez accepter les conditions",
                 })}
-                className="mt-1 focus:ring-green-500"
+                className="mt-1 text-green-600"
               />
               <span>
                 J'accepte les{" "}
@@ -250,16 +243,21 @@ function Register() {
           {/* Bouton */}
           <button
             type="submit"
-            className="w-full bg-green-700 text-white py-2 rounded-md hover:bg-green-800 transition duration-200 text-lg"
+            disabled={isLoading}
+            className="w-full bg-green-700 text-white py-2 rounded-lg hover:bg-green-800 transition duration-200 text-sm disabled:opacity-50"
           >
-            S'inscrire
+            {isLoading && <Loader2 className="w-5 h-5 animate-spin mr-2" />}
+            {isLoading ? "Inscription..." : "S'inscrire"}
           </button>
         </form>
 
-        {/* Lien vers connexion */}
-        <div className="mt-4 text-center text-sm">
-          Vous avez déjà un compte ?{" "}
-          <Link to="/login" className="text-green-700 hover:underline">
+        {/* Lien connexion */}
+        <div className="mt-6 text-center text-sm">
+          Déjà un compte ?{" "}
+          <Link
+            to="/auth/login"
+            className="text-green-700 font-medium hover:underline"
+          >
             Se connecter
           </Link>
         </div>

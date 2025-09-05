@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -13,10 +12,11 @@ class ResetPasswordMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $data;
+
     /**
      * Create a new message instance.
      */
-    public $data;
     public function __construct($data)
     {
         $this->data = $data;
@@ -28,27 +28,20 @@ class ResetPasswordMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Reset Password Mail',
+            subject: 'Réinitialisation du mot de passe - FinTrack237',
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
-    public function content(): Content
+
+    public function build()
     {
-        return new Content(
-            view: 'emails.reset-password',
-            with: [
-                'data' => $this->data,
-            ]
-        );
+        return $this->subject('🔑 Réinitialisation du mot de passe - FinTrack237')
+            ->view('emails.reset_password') // 👈 Vue Blade personnalisée
+            ->with(['data' => $this->data]);
     }
 
     /**
      * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
      */
     public function attachments(): array
     {

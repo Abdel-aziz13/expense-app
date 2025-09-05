@@ -16,13 +16,16 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('phone')->unique();
-            $table->string('photo')->nullable();
+            $table->string('photo')->default('avatars/default.jpg')->nullable();;
             $table->string('about')->nullable();
+            $table->string('profession')->nullable();
             $table->string('password');
             $table->enum('role', ['user', 'admin'])->default('user');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('verification_code')->nullable();
             $table->enum('currency', ['FCFA', 'EUR', 'USD'])->default('FCFA');
+            $table->enum('language', ['fr', 'en'])->default('fr');
+            $table->timestamp('code_expires_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

@@ -12,13 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('budgets', function (Blueprint $table) {
+
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('category_id')->nullable()->constrained()->onDelete('set null');
             $table->decimal('amount', 15, 2);
-            $table->string('currency', 10)->default('XAF');
-            $table->date('start_date');
-            $table->date('end_date');
+            $table->decimal('alert_threshold', 5, 2)->default(0);
+            $table->enum('period', ['weekly', 'monthly'])->default('monthly');
+            $table->decimal('spent', 15, 2)->default(0);
             $table->timestamps();
         });
     }
